@@ -8,7 +8,7 @@ PGM=${ARCH}/nextgen.exe
 MANAGERS=all
 
 # C source names
-CSRCS = nextgen.c \
+CSRCS = init.c \
         web_server.c \
         heartbeat_led.c \
         lidar_scanner.c \
