@@ -48,7 +48,7 @@ void start_shell(void)
     ret = rtems_shell_init(
             "SHLL", /* task name */
             RTEMS_MINIMUM_STACK_SIZE * 4, /* task stack size */
-            100, /* task priority */
+            240, /* task priority */
             "/dev/console", /* device name */
             false, /* run forever */
             true, /* wait for shell to terminate */

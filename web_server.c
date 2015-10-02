@@ -32,13 +32,16 @@
  * questions regarding the use of the Confidential Information.
  */
 
-#include <httpserver-netconn.h>
+#include <main.h>
+#ifdef USE_WEB_SERVER
 #include <httpserver-socket.h>
 #include <lwip/netif.h>
-#include <tcpip.h>
+#include <lwip/tcpip.h>
 #include <hal-ethernetif.h>
-#include <app_ethernet.h>
+//#include <app_ethernet.h>
+
 #include <lwip/sockets.h>
+#include <lwip/ip_addr.h>
 
 #define USE_DHCP       /* enable DHCP, if disabled static address is used*/
 
@@ -60,10 +63,9 @@
 #define GW_ADDR2   0
 #define GW_ADDR3   150
 
-bool tcpip_init_done = false;
-
 struct netif gnetif; /* network interface structure */
 
+bool tcpip_init_done = false;
 //========================
 /**
   * @brief  Initializes the lwIP stack
@@ -72,9 +74,9 @@ struct netif gnetif; /* network interface structure */
   */
 static void Netif_Config(void)
 {
-  struct ip_addr ipaddr;
-  struct ip_addr netmask;
-  struct ip_addr gw;
+  ip_addr_t ipaddr;
+  ip_addr_t netmask;
+  ip_addr_t gw;
 
   /* IP address setting */
   IP4_ADDR(&ipaddr, IP_ADDR0, IP_ADDR1, IP_ADDR2, IP_ADDR3);
@@ -99,6 +101,9 @@ static void Netif_Config(void)
   /*  Registers the default network interface. */
   netif_set_default(&gnetif);
 
+  //TODO: Is this correct?
+  //autoip_start(&gnetif);
+
   if (netif_is_link_up(&gnetif))
   {
     /* When the netif is fully configured this function must be called.*/
@@ -117,8 +122,6 @@ rtems_task Test_web_server_task(
   rtems_task_argument task_index
 )
 {
-  rtems_interval    ticks = 1;
-
   // Create tcp_ip stack thread
   tcpip_init(NULL, NULL);
 
@@ -130,7 +133,9 @@ rtems_task Test_web_server_task(
   // Initialize webserver demo
   http_server_socket_init();
 
-  for ( ; ; ) {
-    (void) rtems_task_wake_after( ticks );
-  }
+  // a new POSIX should be created to serve any incoming
+  // request and therefore this task is no longer necesary.
+  rtems_task_delete(RTEMS_SELF);
+
 }
+#endif

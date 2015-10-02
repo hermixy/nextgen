@@ -50,9 +50,9 @@ rtems_task Test_led_task(
   for ( ; ; ) {
 
     if(bln_LEDState == false){
-        BSP_LED_On(TEST_LED);
+        //BSP_LED_On(TEST_LED);
     } else {
-        BSP_LED_Off(TEST_LED);
+        //BSP_LED_Off(TEST_LED);
     }
 
     bln_LEDState = !bln_LEDState;

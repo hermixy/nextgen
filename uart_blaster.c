@@ -63,9 +63,9 @@ rtems_task Test_uart_task(
   snprintf((char*)szTestTx, COUNTOF(szTestTx), "Beginning UART Test\n\r");
   ret = write(filedesc, szTestTx, strlen((char*) szTestTx));
 
-  close(filedesc);
+  //close(filedesc);
 
-  filedesc = open(UartName, O_WRONLY | O_APPEND);
+  //filedesc = open(UartName, O_WRONLY | O_APPEND);
 
   while (true)
   {

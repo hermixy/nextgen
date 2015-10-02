@@ -39,10 +39,12 @@
 #ifndef __MAIN_H
 #define __MAIN_H
 
+#include <rtems.h>
+#include <rtems/system.h>
+
 /* Includes ------------------------------------------------------------------*/
 #ifdef STM32F746xx
 #include "stm32f7xx_hal.h"
-#include "stm32746g_discovery.h"
 #include <stm32f7xx_hal_conf.h>
 #include <stm32f7xx_hal.h>
 #include <stm32f746xx.h>
@@ -55,6 +57,14 @@
 #include <stm32f407xx.h>
 #define TEST_LED LED3
 #endif
+
+//#define USE_HEARTBEAT_LED 1
+//#define USE_UART_TX       1
+//#define USE_ECHO     1
+#define USE_WEB_SERVER    1
+//#define USE_LIDAR         1
+//#define USE_SPI 1
+//#define USE_CAN 1
 
 
 /* Exported types ------------------------------------------------------------*/
@@ -108,6 +118,8 @@ rtems_task Test_led_task       (rtems_task_argument task_index);
 rtems_task Test_can_tx_task    (rtems_task_argument task_index);
 rtems_task Test_uart_task      (rtems_task_argument task_index);
 rtems_task Test_echo_task      (rtems_task_argument task_index);
+rtems_task Test_lidar_task     (rtems_task_argument task_index);
+rtems_task Test_spi_master_task(rtems_task_argument task_index);
 #endif /* __MAIN_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

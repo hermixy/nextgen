@@ -31,14 +31,13 @@
  * Confidential Information.  Please email [info@vecnatech.com]  with any
  * questions regarding the use of the Confidential Information.
  */
-#include <rtems.h>
-#include <rtems/system.h>
+
 #include <main.h>
 
-#define USE_HEARTBEAT_LED 1
-#define USE_UART_TX       1
-#define USE_WEB_SERVER    1
-//#define USE_LIDAR       1
+#ifdef FATAL_ERROR_HANDLER
+#include <hal-fatal-error-handler.h>
+#endif
+
 
 typedef enum
 {
@@ -62,9 +61,30 @@ typedef enum
   TASK_LIDAR,
 #endif
 
+#ifdef USE_ECHO
+  TASK_ECHO,
+#endif
+
+#ifdef USE_SPI
+  TASK_SPI,
+#endif
+
   NUM_TASKS_FOR_THIS_EXAMPLE
 } PlatformTasks;
 
+typedef enum
+{
+LED1 = 0,
+LED_GREEN = LED1,
+}Led_TypeDef;
+
+typedef enum {
+  TaskPriority_High = 10,
+  TaskPriority_Medium = 100,
+  TaskPriority_Low
+} TaskPriorities;
+
+#define TEST_LED LED1
 
 rtems_id   Task_id[ NUM_TASKS_FOR_THIS_EXAMPLE ];         /* array of task ids */
 rtems_name Task_name[ NUM_TASKS_FOR_THIS_EXAMPLE ];       /* array of task names */
@@ -82,7 +102,11 @@ rtems_task Init(
   rtems_task_argument argument
 )
 {
-  BSP_LED_Init(TEST_LED);
+  //BSP_LED_Init(TEST_LED);
+
+#ifdef FATAL_ERROR_HANDLER
+  stm32f_initialize_user_extensions();
+#endif
 
   printf( "\n\n*** Vecna NextGen Controller Project ***\n\n" );
 
@@ -92,14 +116,12 @@ rtems_task Init(
   printf("PCLK1  = %lu Hz\n",  HAL_RCC_GetPCLK1Freq());
   printf("PCLK2  = %lu Hz\n",  HAL_RCC_GetPCLK2Freq());
 
-  Task_name[ TASK_LED ]     = rtems_build_name( 'T', 'L', 'E', 'D' );
-
 #ifdef USE_UART_TX
   Task_name[ TASK_UART_TX ] = rtems_build_name( 'T', '_', 'T', 'X' );
 
   (void) rtems_task_create(
-    Task_name[ TASK_UART_TX ], 3, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
-    RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_UART_TX ]
+    Task_name[ TASK_UART_TX ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+    RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_UART_TX ]
   );
 
   (void) rtems_task_start( Task_id[ TASK_UART_TX ], Test_uart_task, 3 );
@@ -109,7 +131,7 @@ rtems_task Init(
   Task_name[ TASK_CAN ]     = rtems_build_name( 'C', 'A', 'N', 'T' );
 
   (void) rtems_task_create(
-    Task_name[ TASK_CAN ], 7, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+    Task_name[ TASK_CAN ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
     RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_CAN ]
   );
 
@@ -121,7 +143,7 @@ rtems_task Init(
   Task_name[ TASK_WEB_SERVER ]     = rtems_build_name( 'W', 'E', 'B', 'S' );
 
    (void) rtems_task_create(
-     Task_name[ TASK_WEB_SERVER ], 8, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+     Task_name[ TASK_WEB_SERVER ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
      RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_WEB_SERVER ]
    );
 
@@ -133,20 +155,47 @@ rtems_task Init(
   Task_name[ TASK_LIDAR ]     = rtems_build_name( 'L', 'I', 'D', 'R' );
 
    (void) rtems_task_create(
-     Task_name[ TASK_LIDAR ], 9, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
-     RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_LIDAR ]
+     Task_name[ TASK_LIDAR ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+     RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_LIDAR ]
    );
 
    (void) rtems_task_start( Task_id[ TASK_LIDAR ], Test_lidar_task,  9 );
 #endif
 
+#ifdef USE_ECHO
+
+  Task_name[ TASK_ECHO ]     = rtems_build_name( 'E', 'C', 'H', 'O' );
+
+   (void) rtems_task_create(
+     Task_name[ TASK_ECHO ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+     RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_ECHO ]
+   );
+
+   (void) rtems_task_start( Task_id[ TASK_ECHO ], Test_echo_task,  9 );
+#endif
+
 #ifdef USE_HEARTBEAT_LED
+
+   Task_name[ TASK_LED ]     = rtems_build_name( 'T', 'L', 'E', 'D' );
+
   (void) rtems_task_create(
-    Task_name[ TASK_LED ], 30, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
-    RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_LED ]
+    Task_name[ TASK_LED ], 250, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+    RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_LED ]
   );
 
   (void) rtems_task_start( Task_id[ TASK_LED ], Test_led_task,  2 );
+#endif
+
+#ifdef USE_SPI
+
+  Task_name[ TASK_SPI ]     = rtems_build_name( 'T', 'S', 'P', 'I' );
+
+  (void) rtems_task_create(
+    Task_name[ TASK_SPI ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+    RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_SPI ]
+  );
+
+  (void) rtems_task_start( Task_id[ TASK_SPI ], Test_spi_master_task,  2 );
 #endif
 
   printf("Starting shell...\r\n");
@@ -159,7 +208,7 @@ rtems_task Init(
 
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
-//#define CONFIGURE_APPLICATION_NEEDS_RTC_DRIVER
+//#define CONFIGURE_APPLICATION_NEEDS_RT
 
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 #define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS   64
@@ -167,8 +216,7 @@ rtems_task Init(
 #define CONFIGURE_MAXIMUM_DRIVERS                  20
 
 #define CONFIGURE_APPLICATION_NEEDS_LIBBLOCK
-#define CONFIGURE_SWAPOUT_TASK_PRIORITY            10
-
+#define CONFIGURE_SWAPOUT_TASK_PRIORITY            2
 
 #define CONFIGURE_INIT_TASK_STACK_SIZE           RTEMS_MINIMUM_STACK_SIZE
 #define CONFIGURE_EXTRA_TASK_STACKS              RTEMS_MINIMUM_STACK_SIZE
@@ -179,6 +227,7 @@ rtems_task Init(
 #define CONFIGURE_MAXIMUM_SEMAPHORES             rtems_resource_unlimited (20)
 #define CONFIGURE_MAXIMUM_MESSAGE_QUEUES         rtems_resource_unlimited (4)
 #define CONFIGURE_MAXIMUM_PARTITIONS             rtems_resource_unlimited (2)
+#define CONFIGURE_MAXIMUM_USER_EXTENSIONS            8
 #define CONFIGURE_UNIFIED_WORK_AREAS
 
 #define CONFIGURE_MAXIMUM_POSIX_KEYS                 16

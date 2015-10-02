@@ -59,7 +59,6 @@ rtems_task Test_echo_task(
 
     read(filedesc, szTestRx, 1);
     write(filedesc, szTestRx, 1);
-
   }
 
   close(filedesc);

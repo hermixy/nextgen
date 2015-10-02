@@ -32,16 +32,17 @@
  * questions regarding the use of the Confidential Information.
  */
 
+#include <main.h>
+
+#ifdef USE_LIDAR
 #include <rtems.h>
 #include <rtems/system.h>
-#include <httpserver-netconn.h>
 #include <httpserver-socket.h>
 #include <lwip/netif.h>
-#include <tcpip.h>
+#include <lwip/tcpip.h>
 #include <hal-ethernetif.h>
-#include <app_ethernet.h>
 #include <lwip/sockets.h>
-#include <main.h>
+
 
 //=======================LIDAR TASK================================================
 rtems_task Test_lidar_task(
@@ -103,3 +104,5 @@ rtems_task Test_lidar_task(
     }
   }
 }
+
+#endif
