@@ -38,8 +38,6 @@
 #include <lwip/netif.h>
 #include <lwip/tcpip.h>
 #include <hal-ethernetif.h>
-//#include <app_ethernet.h>
-
 #include <lwip/sockets.h>
 #include <lwip/ip_addr.h>
 
@@ -101,9 +99,6 @@ static void Netif_Config(void)
   /*  Registers the default network interface. */
   netif_set_default(&gnetif);
 
-  //TODO: Is this correct?
-  //autoip_start(&gnetif);
-
   if (netif_is_link_up(&gnetif))
   {
     /* When the netif is fully configured this function must be called.*/
@@ -134,7 +129,7 @@ rtems_task Test_web_server_task(
   http_server_socket_init();
 
   // a new POSIX should be created to serve any incoming
-  // request and therefore this task is no longer necesary.
+  // request and therefore this task is no longer necessary.
   rtems_task_delete(RTEMS_SELF);
 
 }
