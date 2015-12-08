@@ -109,9 +109,6 @@ rtems_task Init(
   rtems_task_argument argument
 )
 {
-
-  rtems_id timer;
-
   //BSP_LED_Init(TEST_LED);
   //stm32_bsp_register_i2c();
   //stm32f_initialize_user_extensions();
