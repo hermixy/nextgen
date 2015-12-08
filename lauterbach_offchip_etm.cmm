@@ -1,0 +1,80 @@
+; --------------------------------------------------------------------------------
+; @Title: Simple offchip-trace demo for STM32F7xx derivatives
+; @Description:
+;   This is a small demo how to setup a SWD debug session on Cortex-M7
+;   for STM32F7xx derivatives. The sieve demo is loaded on SRAM.
+;   The ETM is prepared for offchip-tracing.
+;
+;   Prerequisites:
+;    * Combiprobe is connected to the MIPI20T TRACE connector
+;
+; @Keywords: Cortex-M7, debug, ETM, ITM, STM32, SWD
+; @Author: AME
+; @Board: STM32F756G-Eval
+; @Chip: STM32F7*
+; @Copyright: (C) 1989-2015 Lauterbach GmbH, licensed for use with TRACE32(R) only
+; --------------------------------------------------------------------------------
+; $Id: stm32f7_offchip_trace.cmm 8465 2015-06-24 05:28:28Z amerkle $
+
+ SCREEN.ON                    ; all messages are displayed
+
+ AREA.RESet
+ WinPAGE.RESet
+ WinCLEAR
+ WinPOS 0. 26. 63. 7. 0. 0. W006
+ AREA.view
+
+
+; Basic setup
+;RESet
+SYStem.RESet
+SYStem.CPU STM32F756ZG
+SYStem.CONFIG.DEBUGPORTTYPE SWD
+SYStem.CONFIG.CONNECTOR MIPI20T
+SYStem.MemAccess DAP
+SYStem.Option DUALPORT ON
+
+; prepare flash programming
+DO ~~/demo/arm/flash/stm32f7xx PREPAREONLY
+
+; load example code
+;FLASH.ReProgram ALL
+;Data.LOAD.auto /other/firmware/nextgen/o-debug/nextgen.ralf
+;FLASH.ReProgram OFF
+
+; reset the target again
+;SYStem.Up
+
+; initialize Offchip-Trace
+Data.Set E:0xe0042004 %Long Data.Long(E:0xe0042004)|0xe0 ; DBGMCU_CR
+; set PinMux for PE2-6 -AF0
+Data.Set E:0x40023810 %Long Data.Long(E:0x40023810)&~0x10      ; RCC_AHB1RST
+Data.Set E:0x40023830 %Long Data.Long(E:0x40023830)|0x10       ; RCC_AHB1ENR
+Data.Set E:0x40021000 %Long Data.Long(E:0x40021000)|0x00002aa0 ; GPIOE_MODER
+Data.Set E:0x40021008 %Long Data.Long(E:0x40021008)|0x00003ff0 ; GPIOE_OSPEEDR
+Data.Set E:0x40021020 %Long Data.Long(E:0x40021020)&0xf00000ff ; GPIOE_AFRL
+
+IF CAnalyzer()
+(
+  TPIU.PortSize 4
+  ETM.Trace ON
+;  ETM.DataTrace Both
+  ETM.ON
+)
+
+; load project code
+ Data.LOAD.Elf /other/firmware/nextgen/o-debug/nextgen.ralf
+ 
+ break.set _Terminate
+ 
+ PRINT "load complete." 
+
+
+; run till main
+WAIT !STATE.RUN()
+break
+
+IF CAnalyzer()
+(
+  Trace.List
+)

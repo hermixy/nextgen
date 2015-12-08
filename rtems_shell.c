@@ -42,9 +42,6 @@ void start_shell(void)
 {
     rtems_status_code ret = RTEMS_SUCCESSFUL;
 
-    printf(" ================ Now connect t=========\n");
-    printf(" starting shell\n");
-    printf(" =========================\n");
     ret = rtems_shell_init(
             "SHLL", /* task name */
             RTEMS_MINIMUM_STACK_SIZE * 4, /* task stack size */

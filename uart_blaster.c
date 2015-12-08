@@ -43,6 +43,8 @@
 
 //=====================UART==============================================
 
+static char output_buffer[1024] = "01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
+
 // -------------- UART DMA TX TASK -------------------------
 rtems_task Test_uart_task(
   rtems_task_argument task_index
@@ -50,7 +52,6 @@ rtems_task Test_uart_task(
 {
   rtems_interval    ticks;
   uint32_t counter = 0UL;
-  uint8_t szTestTx[128];
   char UartName[32];
   const int TEST_UART = 3;
   int ret;
@@ -60,25 +61,27 @@ rtems_task Test_uart_task(
   sprintf(UartName, "/dev/ttyS%d", TEST_UART);
   int filedesc = open(UartName, O_WRONLY | O_APPEND);
 
-  snprintf((char*)szTestTx, COUNTOF(szTestTx), "Beginning UART Test\n\r");
-  ret = write(filedesc, szTestTx, strlen((char*) szTestTx));
-
-  //close(filedesc);
-
-  //filedesc = open(UartName, O_WRONLY | O_APPEND);
+  snprintf((char*)output_buffer, COUNTOF(output_buffer), "Beginning UART Test\n\r");
+  ret = write(filedesc, output_buffer, strlen((char*) output_buffer));
 
   while (true)
   {
     counter++;
 
-    snprintf((char*) szTestTx, COUNTOF(szTestTx), "ttyS%d %lu 01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
+    ret = write(filedesc, output_buffer, strlen((char*) output_buffer));
+
+#if 0
+    snprintf((char*) output_buffer, COUNTOF(output_buffer), "ttyS%d %lu 01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
             "\n\r", TEST_UART, counter);
-    ret = write(filedesc, szTestTx, strlen((char*) szTestTx));
+
+    ret = write(filedesc, output_buffer, strlen((char*) output_buffer));
+
 
     while(ret != 0) {
         (void) rtems_task_wake_after( 1 );
-        ret = write(filedesc, szTestTx, strlen((char*) szTestTx));
+        ret = write(filedesc, output_buffer, strlen((char*) output_buffer));
     }
+#endif
 
     (void) rtems_task_wake_after( ticks );
   }

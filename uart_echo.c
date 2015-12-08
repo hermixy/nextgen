@@ -42,15 +42,14 @@
 
 //=======================UART ECHO TASK================================================
 rtems_task Test_echo_task(
-  rtems_task_argument task_index
+  rtems_task_argument test_uart_arg
 )
 {
-  const int TEST_UART = 6;
   uint8_t szTestRx[128];
   uint32_t counter = 0UL;
   char UartName[32];
 
-  sprintf(UartName, "/dev/ttyS%d", TEST_UART);
+  sprintf(UartName, "/dev/ttyS%lu", *((uint32_t*) test_uart_arg));
   int filedesc = open(UartName, O_RDWR | O_APPEND);
 
   while (true)

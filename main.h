@@ -59,12 +59,14 @@
 #endif
 
 #define USE_HEARTBEAT_LED 1
-#define USE_UART_TX       1
-#define USE_ECHO     1
+//#define USE_UART_TX       1
+//#define USE_ECHO     1
+//#define USE_ECHO2     1
 #define USE_WEB_SERVER    1
 //#define USE_LIDAR         1
-#define USE_SPI 1
-#define USE_CAN 1
+//#define USE_SPI 1
+//#define USE_CAN 1
+//#define USE_SHELL 1
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/

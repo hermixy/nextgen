@@ -47,7 +47,7 @@
 #define IP_ADDR0   192
 #define IP_ADDR1   168
 #define IP_ADDR2   0
-#define IP_ADDR3   11
+#define IP_ADDR3   33
 
 /*NETMASK*/
 #define NETMASK_ADDR0   255
@@ -64,6 +64,19 @@
 struct netif gnetif; /* network interface structure */
 
 bool tcpip_init_done = false;
+
+void stm32f_set_mac_addr(uint8_t* macaddress){
+
+  // This will magically turn the NextGen board
+  // into an Honeywell Fusion4 MSC device...
+  macaddress[0] = 0x00;
+  macaddress[1] = 0x40;
+  macaddress[2] = 0x84;
+  macaddress[3] = 0x04;
+  macaddress[4] = 0x00;
+  macaddress[5] = 0x23;
+}
+
 //========================
 /**
   * @brief  Initializes the lwIP stack
@@ -123,14 +136,14 @@ rtems_task Test_web_server_task(
   // Initialize the LwIP stack
   Netif_Config();
 
-  tcpip_init_done = true;
-
   // Initialize webserver demo
   http_server_socket_init();
+
+  tcpip_init_done = true;
 
   // a new POSIX should be created to serve any incoming
   // request and therefore this task is no longer necessary.
   rtems_task_delete(RTEMS_SELF);
-
 }
+
 #endif

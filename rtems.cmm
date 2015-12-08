@@ -1,0 +1,73 @@
+; --------------------------------------------------------------------------------
+; @Title: RTEMS Demo for TRACE32 RTOS Debugger
+; @Description: 
+;   This batchfile loads all necessary files to demonstrate
+;   the RTOS Debugger for RTEMS.
+; @Keywords: awareness, rtems, RTOS
+; @Author: DIE
+; @Chip: ARM7TDMI
+; @Copyright: (C) 1989-2014 Lauterbach GmbH, licensed for use with TRACE32(R) only
+; --------------------------------------------------------------------------------
+; $Id: rtems.cmm 7821 2014-10-29 11:06:58Z kjmal $
+
+
+ SCREEN.ON                    ; all messages are displayed
+
+ AREA.RESet
+ WinPAGE.RESet
+ WinCLEAR
+ WinPOS 0. 26. 63. 7. 0. 0. W006
+ AREA.view
+
+; Debugger reset
+
+ PRINT "resetting..."
+ RESet
+ 
+; Initializing Debugger
+
+ PRINT "initializing..."
+ 
+ SYStem.CPU STM32F756NG 
+ SYStem.Up
+
+; load sample application
+
+ PRINT "loading sample application..."
+
+ ;Data.LOAD.Elf ticker-arm.elf
+ Data.LOAD.Elf /net/home/jay.doyle/workspace_new/unit_test_2/o-debug/unit_test.ralf
+
+; patch some peripheral stuff for simulator
+
+ IF SIMULATOR()
+ (
+   Data.Assemble bsp_start_hook_0+0x14 nop
+   Data.Assemble lpc24xx_set_pll+0x84 nop
+   Data.Assemble lpc24xx_micro_seconds_delay+0x82 nop
+   Data.Assemble printk+0x16 bx r14
+   Data.Assemble bsp_start_hook_1+0x124 nop     ; init bss
+   Data.Assemble bsp_start_hook_1+0x136 nop
+ )
+ 
+; initialize RTOS support
+ PRINT "initializing RTOS support..."
+ TASK.CONFIG rtems          ; load RTEMS awareness (rtems.t32)
+ MENU.ReProgram rtems       ; load RTEMS specific menu (rtems.men)
+ HELP.FILTER.Add rtosrtems  ; add RTEMS awareness manual to help filter
+ 
+ PRINT "load complete." 
+
+; open some windows
+
+ WinPOS 0. 0. 73. 23.
+ List.auto
+ 
+ WinPOS 30. 12. 80. 9.
+ TASK.Thread 
+
+; start application
+
+ Break.Set _Thread_Idle_body
+
+ Go Init

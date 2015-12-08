@@ -1,0 +1,9 @@
+// T32TEST001 Mon Nov 30 12:06:51 2015
+
+ B::
+ 
+ BREAK.RESET
+ B.S   _Terminate\3 /P
+ V.B.S Per_CPU_Information[0].per_cpu.thread_dispatch_disable_level; /W /DATA.L 0xFFFFFFFF;
+ 
+ ENDDO

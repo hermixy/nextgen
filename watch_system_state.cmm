@@ -1,0 +1,9 @@
+// T32TEST001 Mon Nov 30 11:45:46 2015
+
+ B::
+ 
+ BREAK.RESET
+ B.S   _Terminate\3 /P
+ B.S   _System_state_Current /W
+ 
+ ENDDO

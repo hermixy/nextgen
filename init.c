@@ -33,11 +33,7 @@
  */
 
 #include <main.h>
-
-#ifdef FATAL_ERROR_HANDLER
 #include <hal-fatal-error-handler.h>
-#endif
-
 
 typedef enum
 {
@@ -63,6 +59,7 @@ typedef enum
 
 #ifdef USE_ECHO
   TASK_ECHO,
+  TASK_ECHO2,
 #endif
 
 #ifdef USE_SPI
@@ -98,36 +95,41 @@ void* POSIX_Init()
 
 //==================== Init ====================================
 
+volatile int isr_in_progress_body;
+
+rtems_timer_service_routine test_isr_in_progress(
+  rtems_id  timer,
+  void     *arg
+)
+{
+  isr_in_progress_body = rtems_interrupt_is_in_progress() ? 1 : 2;
+}
+
 rtems_task Init(
   rtems_task_argument argument
 )
 {
+
+  rtems_id timer;
+
   //BSP_LED_Init(TEST_LED);
-
-#ifdef FATAL_ERROR_HANDLER
-  stm32f_initialize_user_extensions();
-#endif
-
-  printf( "\n\n*** Vecna NextGen Controller Project ***\n\n" );
-
-  printf("-------- HAL Clock Values --------\n");
-  printf("SYSCLK = %lu Hz\n",  HAL_RCC_GetSysClockFreq());
-  printf("HCLK   = %lu Hz\n",  HAL_RCC_GetHCLKFreq());
-  printf("PCLK1  = %lu Hz\n",  HAL_RCC_GetPCLK1Freq());
-  printf("PCLK2  = %lu Hz\n",  HAL_RCC_GetPCLK2Freq());
+  //stm32_bsp_register_i2c();
+  //stm32f_initialize_user_extensions();
 
 #ifdef USE_UART_TX
+  stm32_bsp_register_uart();
   Task_name[ TASK_UART_TX ] = rtems_build_name( 'T', '_', 'T', 'X' );
 
   (void) rtems_task_create(
     Task_name[ TASK_UART_TX ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
-    RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_UART_TX ]
+    RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_UART_TX ]
   );
 
   (void) rtems_task_start( Task_id[ TASK_UART_TX ], Test_uart_task, 3 );
 #endif
 
 #ifdef USE_CAN
+  stm32_bsp_register_can();
   Task_name[ TASK_CAN ]     = rtems_build_name( 'C', 'A', 'N', 'T' );
 
   (void) rtems_task_create(
@@ -140,7 +142,7 @@ rtems_task Init(
 
 #ifdef USE_WEB_SERVER
 
-  Task_name[ TASK_WEB_SERVER ]     = rtems_build_name( 'W', 'E', 'B', 'S' );
+  Task_name[ TASK_WEB_SERVER ]     = rtems_build_name( 'W', 'E', 'B', 'I' );
 
    (void) rtems_task_create(
      Task_name[ TASK_WEB_SERVER ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
@@ -156,7 +158,7 @@ rtems_task Init(
 
    (void) rtems_task_create(
      Task_name[ TASK_LIDAR ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
-     RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_LIDAR ]
+     RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_LIDAR ]
    );
 
    (void) rtems_task_start( Task_id[ TASK_LIDAR ], Test_lidar_task,  9 );
@@ -171,7 +173,24 @@ rtems_task Init(
      RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_ECHO ]
    );
 
-   (void) rtems_task_start( Task_id[ TASK_ECHO ], Test_echo_task,  9 );
+   uint32_t test_uart = 6;
+
+   (void) rtems_task_start( Task_id[ TASK_ECHO ], Test_echo_task,  &test_uart );
+#endif
+
+#ifdef USE_ECHO2
+   Task_name[ TASK_ECHO2 ]     = rtems_build_name( 'E', 'C', 'H', '2' );
+
+
+    (void) rtems_task_create(
+      Task_name[ TASK_ECHO2 ], 240, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
+      RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_ECHO2 ]
+    );
+
+    uint32_t test_uart2 = 3;
+
+    (void) rtems_task_start( Task_id[ TASK_ECHO2 ], Test_echo_task,  &test_uart2 );
+
 #endif
 
 #ifdef USE_HEARTBEAT_LED
@@ -180,14 +199,14 @@ rtems_task Init(
 
   (void) rtems_task_create(
     Task_name[ TASK_LED ], 250, RTEMS_MINIMUM_STACK_SIZE, RTEMS_DEFAULT_MODES,
-    RTEMS_DEFAULT_ATTRIBUTES , &Task_id[ TASK_LED ]
+    RTEMS_DEFAULT_ATTRIBUTES, &Task_id[ TASK_LED ]
   );
 
   (void) rtems_task_start( Task_id[ TASK_LED ], Test_led_task,  2 );
 #endif
 
 #ifdef USE_SPI
-
+  stm32_bsp_register_spi();
   Task_name[ TASK_SPI ]     = rtems_build_name( 'T', 'S', 'P', 'I' );
 
   (void) rtems_task_create(
@@ -198,8 +217,9 @@ rtems_task Init(
   (void) rtems_task_start( Task_id[ TASK_SPI ], Test_spi_master_task,  2 );
 #endif
 
-  printf("Starting shell...\r\n");
+#ifdef USE_SHELL
   start_shell();
+#endif
 
   (void) rtems_task_delete( RTEMS_SELF );
 }
@@ -208,7 +228,6 @@ rtems_task Init(
 
 #define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
 #define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
-//#define CONFIGURE_APPLICATION_NEEDS_RT
 
 #define CONFIGURE_USE_IMFS_AS_BASE_FILESYSTEM
 #define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS   64
@@ -228,19 +247,25 @@ rtems_task Init(
 #define CONFIGURE_MAXIMUM_MESSAGE_QUEUES         rtems_resource_unlimited (4)
 #define CONFIGURE_MAXIMUM_PARTITIONS             rtems_resource_unlimited (2)
 #define CONFIGURE_MAXIMUM_USER_EXTENSIONS            8
+#define CONFIGURE_MAXIMUM_TIMERS                     8
 #define CONFIGURE_UNIFIED_WORK_AREAS
 
+#if 1
 #define CONFIGURE_MAXIMUM_POSIX_KEYS                 16
 #define CONFIGURE_MAXIMUM_POSIX_KEY_VALUE_PAIRS      16
 #define CONFIGURE_MAXIMUM_POSIX_THREADS              10
 #define CONFIGURE_MAXIMUM_POSIX_CONDITION_VARIABLES  20
 #define CONFIGURE_MAXIMUM_POSIX_MUTEXES              40
+#endif
 
-#define CONFIGURE_MICROSECONDS_PER_TICK          1000
+#define CONFIGURE_MICROSECONDS_PER_TICK              1000
 
 #define CONFIGURE_SHELL_COMMANDS_INIT
 #define CONFIGURE_SHELL_COMMANDS_ALL
 #define CONFIGURE_POSIX_INIT_THREAD_TABLE
+
+#define CONFIGURE_UNIFIED_WORK_AREAS
+#define CONFIGURE_UNLIMITED_OBJECTS
 #include <rtems/shellconfig.h>
 
 #define CONFIGURE_INIT
